@@ -1,279 +1,219 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { CheckCircle, ArrowRight, Home, CreditCard, Mail, Calendar } from "lucide-react"
-import { Navigation } from "@/components/navigation"
-import { useAuth } from "@/components/auth-provider"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { CheckCircle, Loader2, XCircle } from "lucide-react"
+import Link from "next/link"
 
 interface SessionData {
   id: string
+  customer_email: string
   amount_total: number
   currency: string
   payment_status: string
-  customer_email: string
   metadata: {
     userId: string
     planType: string
     credits: string
-    price: string
+    userEmail: string
   }
-  created: number
+  line_items: Array<{
+    description: string
+    amount: number
+    currency: string
+    quantity: number
+  }>
 }
 
-export default function SuccessPage() {
+function SuccessContent() {
   const searchParams = useSearchParams()
   const sessionId = searchParams.get("session_id")
-  const { user, updateUser } = useAuth()
-  const [isLoading, setIsLoading] = useState(true)
   const [sessionData, setSessionData] = useState<SessionData | null>(null)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const verifySession = async () => {
-      if (!sessionId) {
-        setError("No session ID found")
-        setIsLoading(false)
-        return
-      }
+    if (!sessionId) {
+      setError("No session ID provided")
+      setLoading(false)
+      return
+    }
 
+    const verifySession = async () => {
       try {
-        const response = await fetch(`/api/verify-session?session_id=${sessionId}`)
+        console.log("Verifying session:", sessionId)
+
+        const response = await fetch("/api/verify-session", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ sessionId }),
+        })
+
         const data = await response.json()
 
-        if (data.success) {
-          setSessionData(data.session)
-
-          // Update user credits/plan based on purchase
-          if (user && data.session.metadata) {
-            const { planType, credits } = data.session.metadata
-            const creditsNum = Number.parseInt(credits)
-
-            if (planType === "Indie" || planType === "Pro") {
-              // For subscriptions, set the plan and monthly credits
-              updateUser({
-                plan: planType,
-                credits: creditsNum,
-              })
-
-              // Update localStorage
-              localStorage.setItem("userPlan", planType)
-              localStorage.setItem("userCredits", credits)
-            } else {
-              // For one-time packs, add to existing credits
-              const newCredits = user.credits + creditsNum
-              updateUser({ credits: newCredits })
-              localStorage.setItem("userCredits", newCredits.toString())
-            }
-          }
-        } else {
-          setError(data.error || "Payment verification failed")
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to verify session")
         }
-      } catch (error) {
-        console.error("Error verifying session:", error)
-        setError("Failed to verify payment")
+
+        console.log("Session verified:", data)
+        setSessionData(data.session)
+      } catch (error: any) {
+        console.error("Verification error:", error)
+        setError(error.message || "Failed to verify payment")
       } finally {
-        setIsLoading(false)
+        setLoading(false)
       }
     }
 
     verifySession()
-  }, [sessionId, user, updateUser])
+  }, [sessionId])
 
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-  }
-
-  const getPlanDisplayName = (planType: string) => {
-    switch (planType) {
-      case "Creator":
-        return "🆓 Creator Plan"
-      case "Indie":
-        return "⭐️ Indie Plan"
-      case "Pro":
-        return "🔥 Pro Plan"
-      case "silver-pack":
-        return "Silver Pack"
-      case "gold-pack":
-        return "Gold Pack"
-      case "platinum-pack":
-        return "Platinum Pack"
-      default:
-        return planType
-    }
-  }
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-300">Verifying your purchase...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-black to-pink-900">
+        <Card className="w-full max-w-md">
+          <CardContent className="flex flex-col items-center justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin text-purple-600 mb-4" />
+            <p className="text-center text-gray-600">Verifying your payment...</p>
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-black text-white">
-        <Navigation />
-        <div className="pt-20 min-h-screen bg-gradient-to-br from-red-900/10 via-gray-900/10 to-black">
-          <div className="container mx-auto px-4 py-12">
-            <div className="max-w-2xl mx-auto text-center">
-              <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                <CreditCard className="w-10 h-10 text-red-400" />
-              </div>
-              <h1 className="text-4xl font-bold mb-4 text-red-400">Payment Verification Failed</h1>
-              <p className="text-xl text-gray-300 mb-8">{error}</p>
-              <div className="space-y-4">
-                <Button
-                  onClick={() => (window.location.href = "/pricing")}
-                  className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-                >
-                  Try Again
-                </Button>
-                <Button
-                  onClick={() => (window.location.href = "/")}
-                  variant="outline"
-                  className="w-full border-gray-600 text-gray-300 hover:bg-gray-800"
-                >
-                  <Home className="w-5 h-5 mr-2" />
-                  Back to Home
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-black to-pink-900">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <CardTitle className="text-red-600">Payment Verification Failed</CardTitle>
+            <CardDescription>{error}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Link href="/pricing">
+              <Button className="w-full">Return to Pricing</Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
+  if (!sessionData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-black to-pink-900">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <CardTitle className="text-red-600">No Payment Data</CardTitle>
+            <CardDescription>Unable to retrieve payment information</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Link href="/pricing">
+              <Button className="w-full">Return to Pricing</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  const formatAmount = (amount: number, currency: string) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency.toUpperCase(),
+    }).format(amount / 100)
+  }
+
   return (
-    <div className="min-h-screen bg-black text-white">
-      <Navigation />
-
-      <div className="pt-20 min-h-screen bg-gradient-to-br from-green-900/10 via-blue-900/10 to-black">
-        <div className="container mx-auto px-4 py-12">
-          <div className="max-w-2xl mx-auto text-center">
-            <div className="mb-8">
-              <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                <CheckCircle className="w-10 h-10 text-white" />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-black to-pink-900 p-4">
+      <Card className="w-full max-w-2xl">
+        <CardHeader className="text-center">
+          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+          <CardTitle className="text-2xl text-green-600">Payment Successful!</CardTitle>
+          <CardDescription className="text-lg">
+            Thank you for your purchase. Your payment has been processed successfully.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-lg mb-3">Purchase Details</h3>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Plan:</span>
+                <span className="font-medium">{sessionData.metadata.planType}</span>
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
-                Payment Successful!
-              </h1>
-              <p className="text-xl text-gray-300">Thank you for your purchase. Your account has been updated.</p>
-            </div>
-
-            {sessionData && (
-              <Card className="bg-gray-900/50 border-gray-700 backdrop-blur-sm mb-8">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center justify-center space-x-2">
-                    <CreditCard className="w-5 h-5" />
-                    <span>Purchase Details</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Plan/Pack:</span>
-                    <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30">
-                      {getPlanDisplayName(sessionData.metadata?.planType || "Unknown")}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Amount Paid:</span>
-                    <span className="text-white font-semibold">
-                      ${(sessionData.amount_total / 100).toFixed(2)} {sessionData.currency.toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Credits Added:</span>
-                    <span className="text-green-400 font-semibold">+{sessionData.metadata?.credits || 0}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Purchase Date:</span>
-                    <div className="flex items-center space-x-1 text-gray-300">
-                      <Calendar className="w-4 h-4" />
-                      <span className="text-sm">{formatDate(sessionData.created)}</span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Transaction ID:</span>
-                    <span className="text-gray-300 text-sm font-mono">{sessionData.id.slice(-12)}</span>
-                  </div>
-                  {sessionData.customer_email && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Email:</span>
-                      <div className="flex items-center space-x-1 text-gray-300">
-                        <Mail className="w-4 h-4" />
-                        <span className="text-sm">{sessionData.customer_email}</span>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            <div className="space-y-4">
-              <Button
-                onClick={() => (window.location.href = "/dashboard")}
-                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-lg py-6"
-              >
-                Go to Dashboard
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-
-              <Button
-                onClick={() => (window.location.href = "/")}
-                variant="outline"
-                className="w-full border-gray-600 text-gray-300 hover:bg-gray-800 text-lg py-6"
-              >
-                <Home className="w-5 h-5 mr-2" />
-                Back to Home
-              </Button>
-            </div>
-
-            <div className="mt-8 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg">
-              <p className="text-blue-300 text-sm">
-                📧 A confirmation email has been sent to your registered email address with your receipt and next steps.
-              </p>
-            </div>
-
-            {/* Next Steps */}
-            <div className="mt-8 p-6 bg-gray-900/30 border border-gray-700 rounded-lg text-left">
-              <h3 className="text-lg font-semibold text-white mb-4">🎵 What's Next?</h3>
-              <ul className="space-y-2 text-gray-300">
-                <li className="flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 text-green-400" />
-                  <span>Your credits have been added to your account</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 text-green-400" />
-                  <span>You can now submit tracks for professional review</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 text-green-400" />
-                  <span>Access exclusive behind-the-scenes content</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle className="w-4 h-4 text-green-400" />
-                  <span>Get detailed feedback from industry professionals</span>
-                </li>
-              </ul>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Amount:</span>
+                <span className="font-medium">{formatAmount(sessionData.amount_total, sessionData.currency)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Email:</span>
+                <span className="font-medium">{sessionData.customer_email}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Credits:</span>
+                <span className="font-medium">{sessionData.metadata.credits}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Session ID:</span>
+                <span className="font-mono text-sm">{sessionData.id}</span>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+
+          {sessionData.line_items.length > 0 && (
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="font-semibold text-lg mb-3">Items Purchased</h3>
+              <div className="space-y-2">
+                {sessionData.line_items.map((item, index) => (
+                  <div key={index} className="flex justify-between">
+                    <span className="text-gray-600">{item.description}</span>
+                    <span className="font-medium">
+                      {formatAmount(item.amount, item.currency)} × {item.quantity}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Link href="/dashboard" className="flex-1">
+              <Button className="w-full">Go to Dashboard</Button>
+            </Link>
+            <Link href="/pricing" className="flex-1">
+              <Button variant="outline" className="w-full bg-transparent">
+                View More Plans
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     </div>
+  )
+}
+
+export default function SuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-black to-pink-900">
+          <Card className="w-full max-w-md">
+            <CardContent className="flex flex-col items-center justify-center p-8">
+              <Loader2 className="h-8 w-8 animate-spin text-purple-600 mb-4" />
+              <p className="text-center text-gray-600">Loading...</p>
+            </CardContent>
+          </Card>
+        </div>
+      }
+    >
+      <SuccessContent />
+    </Suspense>
   )
 }

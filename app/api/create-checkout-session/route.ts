@@ -1,103 +1,117 @@
 import { type NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
 
-// Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-06-20",
 })
 
 export async function POST(request: NextRequest) {
-  console.log("=== STRIPE CHECKOUT SESSION API CALLED ===")
-
   try {
-    // Parse the request body
     const body = await request.json()
-    console.log("Request body:", body)
+    const { priceId, planName, userId, userEmail } = body
 
-    const { priceId, userId, userEmail, planName } = body
+    console.log("Checkout session request:", { priceId, planName, userId, userEmail })
 
     // Validate required fields
-    if (!priceId) {
-      console.error("Missing priceId")
-      return NextResponse.json({ error: "Price ID is required" }, { status: 400 })
+    if (!priceId || !planName || !userId || !userEmail) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    if (!userId) {
-      console.error("Missing userId")
-      return NextResponse.json({ error: "User ID is required" }, { status: 400 })
+    // Validate price exists in Stripe
+    try {
+      await stripe.prices.retrieve(priceId)
+      console.log("Price validated successfully:", priceId)
+    } catch (error) {
+      console.error("Invalid price ID:", priceId, error)
+      return NextResponse.json({ error: "Invalid price ID" }, { status: 400 })
     }
 
-    if (!userEmail) {
-      console.error("Missing userEmail")
-      return NextResponse.json({ error: "User email is required" }, { status: 400 })
+    // Get domain with multiple fallback strategies
+    let domain = ""
+
+    // Strategy 1: Use NEXT_PUBLIC_DOMAIN if available
+    if (process.env.NEXT_PUBLIC_DOMAIN) {
+      domain = process.env.NEXT_PUBLIC_DOMAIN
+      console.log("Using NEXT_PUBLIC_DOMAIN:", domain)
+    } else {
+      // Strategy 2: Construct from request headers
+      const host = request.headers.get("host")
+      const protocol = request.headers.get("x-forwarded-proto") || "https"
+
+      if (host) {
+        domain = `${protocol}://${host}`
+        console.log("Constructed from headers:", { host, protocol, domain })
+      } else {
+        // Strategy 3: Use request URL as fallback
+        const url = new URL(request.url)
+        domain = `${url.protocol}//${url.host}`
+        console.log("Using request URL:", domain)
+      }
     }
 
-    console.log("Creating checkout session for:", { priceId, userId, userEmail, planName })
+    // Final validation and fallback
+    if (!domain || domain === "https://null" || !domain.includes("://")) {
+      // Last resort fallback for development
+      domain = "http://localhost:3000"
+      console.warn("Using localhost fallback:", domain)
+    }
 
-    // Get the current URL origin for success/cancel URLs
-    const origin = request.headers.get("origin") || "http://localhost:3000"
-    console.log("Using origin:", origin)
+    console.log("Final domain:", domain)
 
-    // Create the checkout session
-    const session = await stripe.checkout.sessions.create({
-      customer_email: userEmail,
+    const successUrl = `${domain}/success?session_id={CHECKOUT_SESSION_ID}`
+    const cancelUrl = `${domain}/pricing`
+
+    console.log("Checkout URLs:", { successUrl, cancelUrl })
+
+    // Determine if this is a subscription or one-time payment
+    const price = await stripe.prices.retrieve(priceId)
+    const mode = price.type === "recurring" ? "subscription" : "payment"
+
+    console.log("Checkout mode:", mode, "Price type:", price.type)
+
+    const sessionConfig: Stripe.Checkout.SessionCreateParams = {
+      mode,
       line_items: [
         {
           price: priceId,
           quantity: 1,
         },
       ],
-      mode: planName === "Indie" || planName === "Pro" ? "subscription" : "payment",
-      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/pricing`,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      customer_email: userEmail,
       metadata: {
         userId,
-        userEmail,
-        planName: planName || "",
+        planName,
+        priceId,
       },
       allow_promotion_codes: true,
-      billing_address_collection: "required",
-    })
+    }
 
-    console.log("Checkout session created:", {
-      id: session.id,
-      url: session.url,
-      mode: session.mode,
-    })
+    // Add mode-specific metadata
+    if (mode === "subscription") {
+      sessionConfig.subscription_data = {
+        metadata: {
+          userId,
+          planName,
+        },
+      }
+    } else {
+      sessionConfig.payment_intent_data = {
+        metadata: {
+          userId,
+          planName,
+        },
+      }
+    }
 
-    // Return the session URL
-    return NextResponse.json({
-      url: session.url,
-      sessionId: session.id,
-    })
+    const session = await stripe.checkout.sessions.create(sessionConfig)
+
+    console.log("Checkout session created successfully:", session.id)
+
+    return NextResponse.json({ url: session.url })
   } catch (error: any) {
-    console.error("=== STRIPE SESSION ERROR ===")
-    console.error("Error type:", error.type)
-    console.error("Error message:", error.message)
-    console.error("Error code:", error.code)
-
-    // Handle specific Stripe errors
-    if (error.type === "StripeInvalidRequestError") {
-      return NextResponse.json(
-        {
-          error: "Invalid request",
-          details: error.message,
-        },
-        { status: 400 },
-      )
-    }
-
-    if (error.code === "resource_missing") {
-      return NextResponse.json(
-        {
-          error: "Price not found",
-          details: "The selected price is not available",
-        },
-        { status: 404 },
-      )
-    }
-
-    // Generic error
+    console.error("Checkout session creation error:", error)
     return NextResponse.json(
       {
         error: "Failed to create checkout session",

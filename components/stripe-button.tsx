@@ -1,54 +1,47 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { useAuth } from "@/components/auth-provider"
-import { AuthDialog } from "@/components/auth-dialog"
 import { Loader2 } from "lucide-react"
+import { useAuth } from "@/components/auth-provider"
 
 interface StripeButtonProps {
   priceId: string
   planName: string
-  children: React.ReactNode
   className?: string
-  disabled?: boolean
+  children: React.ReactNode
+  onAuthRequired?: () => void
 }
 
-export function StripeButton({ priceId, planName, children, className, disabled }: StripeButtonProps) {
-  const { user } = useAuth()
+export function StripeButton({ priceId, planName, className, children, onAuthRequired }: StripeButtonProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const [authDialog, setAuthDialog] = useState({ isOpen: false })
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState("")
+  const { user } = useAuth()
 
-  const handleCheckout = async () => {
-    console.log("=== STRIPE BUTTON CLICKED ===")
-    console.log("Price ID:", priceId)
-    console.log("Plan Name:", planName)
-    console.log("User:", user)
+  const handleClick = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    console.log("StripeButton clicked:", { user, priceId, planName })
 
-    // Clear any previous errors
-    setError(null)
-
-    // Check if user is authenticated
     if (!user) {
-      console.log("User not authenticated, showing auth dialog")
-      setAuthDialog({ isOpen: true })
+      console.log("No user found, triggering auth required")
+      if (onAuthRequired) {
+        onAuthRequired()
+      }
       return
     }
 
-    // Validate price ID
-    if (!priceId || priceId.trim() === "") {
-      console.error("Invalid price ID:", priceId)
-      setError("Invalid pricing configuration. Please contact support.")
+    if (!priceId) {
+      console.error("No price ID provided")
+      setError("Price ID not configured for this plan")
       return
     }
 
     setIsLoading(true)
+    setError("")
 
     try {
-      console.log("Creating checkout session...")
+      console.log("Creating checkout session for:", { priceId, planName, userId: user.id })
 
       const response = await fetch("/api/create-checkout-session", {
         method: "POST",
@@ -56,61 +49,48 @@ export function StripeButton({ priceId, planName, children, className, disabled 
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          priceId: priceId.trim(),
+          priceId,
+          planName,
           userId: user.id,
           userEmail: user.email,
-          planName: planName,
         }),
       })
 
       console.log("Response status:", response.status)
+      const data = await response.json()
+      console.log("Response data:", data)
 
       if (!response.ok) {
-        const errorData = await response.json()
-        console.error("Checkout session error:", errorData)
-        throw new Error(errorData.details || errorData.error || "Failed to create checkout session")
+        throw new Error(data.error || `HTTP error! status: ${response.status}`)
       }
 
-      const { url } = await response.json()
-      console.log("Checkout URL:", url)
-
-      if (url) {
-        console.log("Redirecting to Stripe checkout...")
-        // Use window.open instead of window.location to avoid blocking
-        const newWindow = window.open(url, "_blank")
-        if (!newWindow) {
-          // If popup was blocked, fall back to same window
-          window.location.href = url
-        }
+      if (data.url) {
+        console.log("Redirecting to checkout:", data.url)
+        window.location.href = data.url
       } else {
         throw new Error("No checkout URL received")
       }
-    } catch (error: any) {
-      console.error("Stripe button error:", error)
-      setError(error.message || "Something went wrong. Please try again.")
+    } catch (err: any) {
+      console.error("Stripe checkout error:", err)
+      setError(err.message || "Something went wrong")
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <>
-      <Button onClick={handleCheckout} disabled={isLoading || disabled || !priceId} className={className}>
+    <div>
+      <Button onClick={handleClick} disabled={isLoading || !priceId} className={className}>
         {isLoading ? (
           <>
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Processing...
+            Loading...
           </>
         ) : (
           children
         )}
       </Button>
-
-      {error && (
-        <div className="mt-2 text-sm text-red-400 bg-red-900/20 border border-red-500/30 rounded p-2">{error}</div>
-      )}
-
-      <AuthDialog isOpen={authDialog.isOpen} onClose={() => setAuthDialog({ isOpen: false })} />
-    </>
+      {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+    </div>
   )
 }

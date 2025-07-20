@@ -3,13 +3,13 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { AuthProvider } from "@/components/auth-provider"
+import { Navigation } from "@/components/navigation"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "The Man Behind The Music - Industry Access Platform",
-  description:
-    "Connect with Grammy-nominated producers, A&Rs, and sync supervisors. Get your music heard by industry professionals.",
+  title: "TMBM - The Man Behind The Music",
+  description: "Connect with Grammy-nominated producers and industry professionals",
     generator: 'v0.dev'
 }
 
@@ -21,7 +21,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <Navigation />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   )

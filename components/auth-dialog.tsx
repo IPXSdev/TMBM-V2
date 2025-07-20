@@ -3,13 +3,12 @@
 import type React from "react"
 
 import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useAuth } from "@/components/auth-provider"
-import { Loader2 } from "lucide-react"
+import { Loader2, Eye, EyeOff, Music } from "lucide-react"
 
 interface AuthDialogProps {
   isOpen: boolean
@@ -17,216 +16,163 @@ interface AuthDialogProps {
 }
 
 export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
-  const { login, signup } = useAuth()
+  const [isLogin, setIsLogin] = useState(true)
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [name, setName] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const { login, signup } = useAuth()
 
-  // Login form state
-  const [loginData, setLoginData] = useState({
-    email: "",
-    password: "",
-  })
-
-  // Signup form state
-  const [signupData, setSignupData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    artistName: "",
-    genre: "",
-  })
-
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError("")
 
     try {
-      const success = await login(loginData.email, loginData.password)
-      if (success) {
-        onClose()
+      if (isLogin) {
+        const success = await login(email, password)
+        if (success) {
+          onClose()
+          // Redirect to dashboard
+          window.location.href = "/dashboard"
+        } else {
+          setError("Invalid email or password")
+        }
       } else {
-        setError("Invalid email or password")
+        await signup(email, password, name)
+        onClose()
+        // Redirect to dashboard
+        window.location.href = "/dashboard"
       }
-    } catch (error) {
-      setError("Login failed. Please try again.")
+    } catch (err: any) {
+      setError(err.message || "Something went wrong")
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+  const resetForm = () => {
+    setEmail("")
+    setPassword("")
+    setName("")
     setError("")
+    setShowPassword(false)
+  }
 
-    try {
-      const success = await signup(signupData)
-      if (success) {
-        onClose()
-      } else {
-        setError("Email already exists or signup failed")
-      }
-    } catch (error) {
-      setError("Signup failed. Please try again.")
-    } finally {
-      setIsLoading(false)
-    }
+  const switchMode = () => {
+    setIsLogin(!isLogin)
+    resetForm()
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md bg-gray-900 border-gray-700">
         <DialogHeader>
-          <DialogTitle className="text-white">Sign in to continue</DialogTitle>
+          <div className="flex items-center justify-center mb-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+              <Music className="w-6 h-6 text-white" />
+            </div>
+          </div>
+          <DialogTitle className="text-white text-center text-2xl">
+            {isLogin ? "Welcome Back" : "Join TMBM"}
+          </DialogTitle>
+          <DialogDescription className="text-gray-400 text-center">
+            {isLogin ? "Sign in to your account" : "Create your account to get started"}
+          </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="login" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-gray-800">
-            <TabsTrigger value="login" className="text-gray-300 data-[state=active]:text-white">
-              Login
-            </TabsTrigger>
-            <TabsTrigger value="signup" className="text-gray-300 data-[state=active]:text-white">
-              Sign Up
-            </TabsTrigger>
-          </TabsList>
+        <div className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {!isLogin && (
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-gray-300">
+                  Full Name
+                </Label>
+                <Input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
+                  placeholder="Enter your full name"
+                  required={!isLogin}
+                />
+              </div>
+            )}
 
-          <TabsContent value="login">
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <Label htmlFor="login-email" className="text-gray-300">
-                  Email
-                </Label>
-                <Input
-                  id="login-email"
-                  type="email"
-                  value={loginData.email}
-                  onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                  className="bg-gray-800 border-gray-600 text-white"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="login-password" className="text-gray-300">
-                  Password
-                </Label>
-                <Input
-                  id="login-password"
-                  type="password"
-                  value={loginData.password}
-                  onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                  className="bg-gray-800 border-gray-600 text-white"
-                  required
-                />
-              </div>
-              {error && <div className="text-red-400 text-sm">{error}</div>}
-              <Button type="submit" disabled={isLoading} className="w-full bg-purple-600 hover:bg-purple-700">
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Signing in...
-                  </>
-                ) : (
-                  "Sign In"
-                )}
-              </Button>
-            </form>
-          </TabsContent>
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-gray-300">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
+                placeholder="Enter your email"
+                required
+              />
+            </div>
 
-          <TabsContent value="signup">
-            <form onSubmit={handleSignup} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="firstName" className="text-gray-300">
-                    First Name
-                  </Label>
-                  <Input
-                    id="firstName"
-                    value={signupData.firstName}
-                    onChange={(e) => setSignupData({ ...signupData, firstName: e.target.value })}
-                    className="bg-gray-800 border-gray-600 text-white"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="lastName" className="text-gray-300">
-                    Last Name
-                  </Label>
-                  <Input
-                    id="lastName"
-                    value={signupData.lastName}
-                    onChange={(e) => setSignupData({ ...signupData, lastName: e.target.value })}
-                    className="bg-gray-800 border-gray-600 text-white"
-                    required
-                  />
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="signup-email" className="text-gray-300">
-                  Email
-                </Label>
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-gray-300">
+                Password
+              </Label>
+              <div className="relative">
                 <Input
-                  id="signup-email"
-                  type="email"
-                  value={signupData.email}
-                  onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
-                  className="bg-gray-800 border-gray-600 text-white"
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="bg-gray-800 border-gray-600 text-white placeholder-gray-400 pr-10"
+                  placeholder="Enter your password"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
-              <div>
-                <Label htmlFor="signup-password" className="text-gray-300">
-                  Password
-                </Label>
-                <Input
-                  id="signup-password"
-                  type="password"
-                  value={signupData.password}
-                  onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
-                  className="bg-gray-800 border-gray-600 text-white"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="artistName" className="text-gray-300">
-                  Artist Name
-                </Label>
-                <Input
-                  id="artistName"
-                  value={signupData.artistName}
-                  onChange={(e) => setSignupData({ ...signupData, artistName: e.target.value })}
-                  className="bg-gray-800 border-gray-600 text-white"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="genre" className="text-gray-300">
-                  Genre
-                </Label>
-                <Input
-                  id="genre"
-                  value={signupData.genre}
-                  onChange={(e) => setSignupData({ ...signupData, genre: e.target.value })}
-                  className="bg-gray-800 border-gray-600 text-white"
-                  placeholder="e.g., Hip-Hop, R&B, Pop"
-                  required
-                />
-              </div>
-              {error && <div className="text-red-400 text-sm">{error}</div>}
-              <Button type="submit" disabled={isLoading} className="w-full bg-purple-600 hover:bg-purple-700">
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Creating account...
-                  </>
-                ) : (
-                  "Create Account"
-                )}
-              </Button>
-            </form>
-          </TabsContent>
-        </Tabs>
+            </div>
+
+            {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  {isLogin ? "Signing In..." : "Creating Account..."}
+                </>
+              ) : (
+                <>{isLogin ? "Sign In" : "Create Account"}</>
+              )}
+            </Button>
+          </form>
+
+          <div className="text-center">
+            <button onClick={switchMode} className="text-purple-400 hover:text-purple-300 text-sm transition-colors">
+              {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+            </button>
+          </div>
+
+          {/* Demo Mode Info (Generic) */}
+          <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
+            <div className="text-center space-y-2">
+              <p className="text-blue-300 text-sm font-medium">Demo Mode Available</p>
+              <p className="text-gray-400 text-xs">Use any email and password to try the platform</p>
+            </div>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   )

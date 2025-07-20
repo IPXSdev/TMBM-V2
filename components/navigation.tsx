@@ -1,13 +1,16 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Music, Menu, X, LogOut, Shield, Crown, Settings } from "lucide-react"
-import { useAuth } from "./auth-provider"
+import { AuthDialog } from "@/components/auth-dialog"
+import { useAuth } from "@/components/auth-provider"
+import { Menu, X, Crown, Settings, Shield, LogOut } from "lucide-react"
 
 export function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isAuthOpen, setIsAuthOpen] = useState(false)
   const { user, logout } = useAuth()
 
   const handleLogout = () => {
@@ -15,238 +18,191 @@ export function Navigation() {
     window.location.href = "/"
   }
 
-  const navItems = [
-    { name: "Home", href: "/" },
-    { name: "About", href: "/about" },
-    { name: "Podcast", href: "/podcast" },
-    { name: "Placements", href: "/placements" },
-    { name: "Pricing", href: "/pricing" },
-    { name: "Contact", href: "/contact" },
-  ]
-
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case "master_dev":
-        return (
-          <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0">
-            <Crown className="w-3 h-3 mr-1" />
-            Master Dev
-          </Badge>
-        )
-      case "admin":
-        return (
-          <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0">
-            <Shield className="w-3 h-3 mr-1" />
-            Admin
-          </Badge>
-        )
-      default:
-        return (
-          <Badge
-            className={`${
-              user?.plan === "Pro"
-                ? "bg-yellow-500/20 text-yellow-300 border-yellow-500/30"
-                : user?.plan === "Creator"
-                  ? "bg-blue-500/20 text-blue-300 border-blue-500/30"
-                  : "bg-gray-500/20 text-gray-300 border-gray-500/30"
-            }`}
-          >
-            {user?.plan}
-          </Badge>
-        )
-    }
-  }
+  const isMasterDev = user?.role === "master_dev" || user?.email === "2668harris@gmail.com"
 
   return (
-    <nav className="fixed top-0 w-full z-50 bg-black/80 backdrop-blur-md border-b border-gray-800">
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        {/* Logo */}
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-            <Music className="w-4 h-4 text-white" />
-          </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            MBM
-          </span>
-        </div>
-
-        {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center space-x-6">
-          {navItems.map((item) => (
-            <a key={item.name} href={item.href} className="text-gray-300 hover:text-white transition-colors">
-              {item.name}
-            </a>
-          ))}
-
-          {user ? (
-            <div className="flex items-center space-x-4">
-              <a href="/dashboard" className="text-gray-300 hover:text-white transition-colors">
-                Dashboard
-              </a>
-
-              {/* Admin Portal Link for Admins and Master Devs */}
-              {(user.role === "admin" || user.role === "master_dev") && (
-                <a href="/admin-portal" className="text-gray-300 hover:text-white transition-colors flex items-center">
-                  <Shield className="w-4 h-4 mr-1" />
-                  Admin Portal
-                </a>
-              )}
-
-              {/* Dev Tools Link for Master Devs Only */}
-              {user.role === "master_dev" && (
-                <a
-                  href="/admin-portal/dev-tools"
-                  className="text-gray-300 hover:text-white transition-colors flex items-center"
-                >
-                  <Crown className="w-4 h-4 mr-1" />
-                  Dev Tools
-                </a>
-              )}
-
-              <a href="/profile" className="text-gray-300 hover:text-white transition-colors flex items-center">
-                <Settings className="w-4 h-4 mr-1" />
-                Profile
-              </a>
-
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-2">
-                  <Menu className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-300">{user.fullName}</span>
-                </div>
-                {getRoleBadge(user.role)}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-gray-600 text-gray-300 hover:bg-gray-800 bg-transparent"
-                  onClick={handleLogout}
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Logout
-                </Button>
+    <>
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-sm border-b border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <Link href="/" className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-sm">M</span>
               </div>
+              <span className="text-white font-bold text-xl">MBM</span>
+            </Link>
+
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-8">
+              <Link href="/" className="text-gray-300 hover:text-white transition-colors">
+                Home
+              </Link>
+              <Link href="/about" className="text-gray-300 hover:text-white transition-colors">
+                About
+              </Link>
+              <Link href="/podcast" className="text-gray-300 hover:text-white transition-colors">
+                Podcast
+              </Link>
+              <Link href="/pricing" className="text-gray-300 hover:text-white transition-colors">
+                Pricing
+              </Link>
+              <Link href="/contact" className="text-gray-300 hover:text-white transition-colors">
+                Contact
+              </Link>
             </div>
-          ) : (
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-blue-500 text-blue-400 hover:bg-blue-500 hover:text-white bg-transparent"
-                onClick={() => (window.location.href = "/login")}
-              >
-                Login
-              </Button>
-              <Button
-                size="sm"
-                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-                onClick={() => (window.location.href = "/signup")}
-              >
-                Sign Up
+
+            {/* User Section */}
+            <div className="hidden md:flex items-center space-x-4">
+              {user ? (
+                <div className="flex items-center space-x-4">
+                  <Link href="/dashboard" className="text-gray-300 hover:text-white transition-colors">
+                    Dashboard
+                  </Link>
+
+                  {isMasterDev && (
+                    <>
+                      <Link
+                        href="/admin-portal"
+                        className="text-purple-300 hover:text-purple-200 transition-colors flex items-center"
+                      >
+                        <Shield className="w-4 h-4 mr-1" />
+                        Admin Portal
+                      </Link>
+                      <Link
+                        href="/admin-portal/dev-tools"
+                        className="text-pink-300 hover:text-pink-200 transition-colors flex items-center"
+                      >
+                        <Crown className="w-4 h-4 mr-1" />
+                        Dev Tools
+                      </Link>
+                    </>
+                  )}
+
+                  <Link href="/profile" className="text-gray-300 hover:text-white transition-colors flex items-center">
+                    <Settings className="w-4 h-4 mr-1" />
+                    Profile
+                  </Link>
+
+                  <div className="flex items-center space-x-2">
+                    <span className="text-white font-medium">{user.name}</span>
+                    {isMasterDev && (
+                      <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0">
+                        <Crown className="w-3 h-3 mr-1" />
+                        Master Dev
+                      </Badge>
+                    )}
+                  </div>
+
+                  <Button onClick={handleLogout} variant="ghost" size="sm" className="text-gray-300 hover:text-white">
+                    <LogOut className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  onClick={() => setIsAuthOpen(true)}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                >
+                  Login
+                </Button>
+              )}
+            </div>
+
+            {/* Mobile menu button */}
+            <div className="md:hidden">
+              <Button onClick={() => setIsMenuOpen(!isMenuOpen)} variant="ghost" size="sm" className="text-white">
+                {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </Button>
             </div>
-          )}
+          </div>
         </div>
 
-        {/* Mobile Menu Button */}
-        <button className="md:hidden text-white" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-          {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
-      </div>
+        {/* Mobile Navigation */}
+        {isMenuOpen && (
+          <div className="md:hidden bg-black/95 backdrop-blur-sm border-t border-gray-800">
+            <div className="px-4 py-4 space-y-4">
+              <Link href="/" className="block text-gray-300 hover:text-white transition-colors">
+                Home
+              </Link>
+              <Link href="/about" className="block text-gray-300 hover:text-white transition-colors">
+                About
+              </Link>
+              <Link href="/podcast" className="block text-gray-300 hover:text-white transition-colors">
+                Podcast
+              </Link>
+              <Link href="/pricing" className="block text-gray-300 hover:text-white transition-colors">
+                Pricing
+              </Link>
+              <Link href="/contact" className="block text-gray-300 hover:text-white transition-colors">
+                Contact
+              </Link>
 
-      {/* Mobile Navigation */}
-      {isMenuOpen && (
-        <div className="md:hidden bg-black/95 backdrop-blur-md border-t border-gray-800">
-          <div className="container mx-auto px-4 py-4 space-y-4">
-            {navItems.map((item) => (
-              <a
-                key={item.name}
-                href={item.href}
-                className="block text-gray-300 hover:text-white transition-colors py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {item.name}
-              </a>
-            ))}
-
-            {user ? (
-              <>
-                <a
-                  href="/dashboard"
-                  className="block text-gray-300 hover:text-white transition-colors py-2"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Dashboard
-                </a>
-
-                {/* Admin Portal Link for Mobile */}
-                {(user.role === "admin" || user.role === "master_dev") && (
-                  <a
-                    href="/admin-portal"
-                    className="block text-gray-300 hover:text-white transition-colors py-2 flex items-center"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <Shield className="w-4 h-4 mr-2" />
-                    Admin Portal
-                  </a>
-                )}
-
-                {/* Dev Tools Link for Mobile */}
-                {user.role === "master_dev" && (
-                  <a
-                    href="/admin-portal/dev-tools"
-                    className="block text-gray-300 hover:text-white transition-colors py-2 flex items-center"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <Crown className="w-4 h-4 mr-2" />
-                    Dev Tools
-                  </a>
-                )}
-
-                <a
-                  href="/profile"
-                  className="block text-gray-300 hover:text-white transition-colors py-2 flex items-center"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <Settings className="w-4 h-4 mr-2" />
-                  Profile
-                </a>
-
-                <div className="pt-4 border-t border-gray-700">
-                  <div className="flex items-center space-x-2 mb-3">
-                    <Menu className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-300">{user.fullName}</span>
-                    {getRoleBadge(user.role)}
+              {user ? (
+                <div className="space-y-4 pt-4 border-t border-gray-700">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-white font-medium">{user.name}</span>
+                    {isMasterDev && (
+                      <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0">
+                        <Crown className="w-3 h-3 mr-1" />
+                        Master Dev
+                      </Badge>
+                    )}
                   </div>
+
+                  <Link href="/dashboard" className="block text-gray-300 hover:text-white transition-colors">
+                    Dashboard
+                  </Link>
+
+                  {isMasterDev && (
+                    <>
+                      <Link
+                        href="/admin-portal"
+                        className="block text-purple-300 hover:text-purple-200 transition-colors"
+                      >
+                        <Shield className="w-4 h-4 mr-1 inline" />
+                        Admin Portal
+                      </Link>
+                      <Link
+                        href="/admin-portal/dev-tools"
+                        className="block text-pink-300 hover:text-pink-200 transition-colors"
+                      >
+                        <Crown className="w-4 h-4 mr-1 inline" />
+                        Dev Tools
+                      </Link>
+                    </>
+                  )}
+
+                  <Link href="/profile" className="block text-gray-300 hover:text-white transition-colors">
+                    <Settings className="w-4 h-4 mr-1 inline" />
+                    Profile
+                  </Link>
+
                   <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full border-gray-600 text-gray-300 hover:bg-gray-800 bg-transparent"
                     onClick={handleLogout}
+                    variant="ghost"
+                    size="sm"
+                    className="text-gray-300 hover:text-white w-full justify-start"
                   >
                     <LogOut className="w-4 h-4 mr-2" />
                     Logout
                   </Button>
                 </div>
-              </>
-            ) : (
-              <div className="flex flex-col space-y-2 pt-4">
-                <Button
-                  variant="outline"
-                  className="border-blue-500 text-blue-400 hover:bg-blue-500 hover:text-white bg-transparent"
-                  onClick={() => (window.location.href = "/login")}
-                >
-                  Login
-                </Button>
-                <Button
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-                  onClick={() => (window.location.href = "/signup")}
-                >
-                  Sign Up
-                </Button>
-              </div>
-            )}
+              ) : (
+                <div className="pt-4 border-t border-gray-700">
+                  <Button
+                    onClick={() => setIsAuthOpen(true)}
+                    className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                  >
+                    Login
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
-    </nav>
+        )}
+      </nav>
+
+      <AuthDialog isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+    </>
   )
 }
