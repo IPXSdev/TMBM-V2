@@ -1,3 +1,4 @@
+"use client"
 import Link from "next/link";
 import { StripeButton } from "@/components/stripe-button";
 import { useAuth } from "@/components/auth-provider";
