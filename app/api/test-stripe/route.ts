@@ -19,7 +19,7 @@ export async function GET() {
     }
 
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2025-06-30.basil",
+      apiVersion: "2024-06-20",
     })
 
     // Test basic Stripe connection by listing products (works with restricted keys)

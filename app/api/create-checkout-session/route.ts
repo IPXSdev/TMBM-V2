@@ -1,16 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
-
 import Stripe from "stripe"
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2024-06-20",
+})
 
 export async function POST(request: NextRequest) {
   try {
-    // Initialize Stripe inside the handler to avoid build-time env var errors
-    if (!process.env.STRIPE_SECRET_KEY) {
-      return NextResponse.json({ error: "Stripe not configured" }, { status: 500 })
-    }
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2025-06-30.basil",
-    })
     const body = await request.json()
     const { priceId, planName, userId, userEmail } = body
 

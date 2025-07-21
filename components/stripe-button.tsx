@@ -1,10 +1,11 @@
 "use client"
 
 import type React from "react"
+
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Loader2 } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
+import { Loader2 } from "lucide-react"
 
 interface StripeButtonProps {
   priceId: string
@@ -16,33 +17,22 @@ interface StripeButtonProps {
 
 export function StripeButton({ priceId, planName, className, children, onAuthRequired }: StripeButtonProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
   const { user } = useAuth()
 
-  const handleClick = async (e: React.MouseEvent) => {
-    e.preventDefault()
-    console.log("StripeButton clicked:", { user, priceId, planName })
-
+  const handleClick = async () => {
     if (!user) {
-      console.log("No user found, triggering auth required")
-      if (onAuthRequired) {
-        onAuthRequired()
-      }
+      onAuthRequired?.()
       return
     }
 
     if (!priceId) {
       console.error("No price ID provided")
-      setError("Price ID not configured for this plan")
       return
     }
 
     setIsLoading(true)
-    setError("")
 
     try {
-      console.log("Creating checkout session for:", { priceId, planName, userId: user.id })
-
       const response = await fetch("/api/create-checkout-session", {
         method: "POST",
         headers: {
@@ -52,45 +42,31 @@ export function StripeButton({ priceId, planName, className, children, onAuthReq
           priceId,
           planName,
           userId: user.id,
-          userEmail: user.email,
         }),
       })
 
-      console.log("Response status:", response.status)
-      const data = await response.json()
-      console.log("Response data:", data)
+      const { url } = await response.json()
 
-      if (!response.ok) {
-        throw new Error(data.error || `HTTP error! status: ${response.status}`)
+      if (url) {
+        window.location.href = url
       }
-
-      if (data.url) {
-        console.log("Redirecting to checkout:", data.url)
-        window.location.href = data.url
-      } else {
-        throw new Error("No checkout URL received")
-      }
-    } catch (err: any) {
-      console.error("Stripe checkout error:", err)
-      setError(err.message || "Something went wrong")
+    } catch (error) {
+      console.error("Error creating checkout session:", error)
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div>
-      <Button onClick={handleClick} disabled={isLoading || !priceId} className={className}>
-        {isLoading ? (
-          <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Loading...
-          </>
-        ) : (
-          children
-        )}
-      </Button>
-      {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
-    </div>
+    <Button onClick={handleClick} disabled={isLoading || !priceId} className={className}>
+      {isLoading ? (
+        <>
+          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+          Loading...
+        </>
+      ) : (
+        children
+      )}
+    </Button>
   )
 }

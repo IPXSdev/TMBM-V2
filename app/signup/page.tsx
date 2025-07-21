@@ -48,7 +48,6 @@ export default function SignupPage() {
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }))
     }
@@ -106,7 +105,7 @@ export default function SignupPage() {
       <div className="pt-20 min-h-screen bg-gradient-to-br from-blue-900/10 via-purple-900/10 to-black">
         <div className="container mx-auto px-4 py-16">
           <div className="max-w-6xl mx-auto">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="grid lg:grid-cols-2 gap-12 items-start">
               {/* Left Side - Benefits & Motivation */}
               <div className="space-y-8">
                 <div className="text-center lg:text-left">
@@ -202,7 +201,6 @@ export default function SignupPage() {
                   </CardHeader>
 
                   <CardContent className="space-y-6">
-                    {/* Error Message */}
                     {errors.general && (
                       <Alert className="bg-red-900/20 border-red-500/50">
                         <AlertCircle className="w-4 h-4" />

@@ -4,19 +4,40 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from "
 
 interface User {
   id: string
-  email: string
   name: string
-  plan: string
-  role: "user" | "admin" | "master_dev"
-  credits: number
+  email: string
+  artistName?: string
+  genre?: string
+  plan: "basic" | "creator" | "pro"
+  role: "user" | "admin" | "master_admin"
+  submissions: number
+  submissionsUsed: number
+  avatar?: string
+  bio?: string
+  socialLinks?: {
+    soundcloud?: string
+    spotify?: string
+    instagram?: string
+  }
 }
 
 interface AuthContextType {
   user: User | null
   login: (email: string, password: string) => Promise<boolean>
-  signup: (email: string, password: string, name?: string) => Promise<void>
+  signup: (data: SignupData) => Promise<boolean>
   logout: () => void
+  updateUser: (data: Partial<User>) => void
   isLoading: boolean
+}
+
+interface SignupData {
+  firstName: string
+  lastName: string
+  email: string
+  password: string
+  artistName: string
+  genre: string
+  inviteCode?: string
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -26,13 +47,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Check for existing session on mount
+    // Check for existing session
     const savedUser = localStorage.getItem("mbm_user")
     if (savedUser) {
       try {
-        const userData = JSON.parse(savedUser)
-        console.log("Restored user from localStorage:", userData)
-        setUser(userData)
+        setUser(JSON.parse(savedUser))
       } catch (error) {
         console.error("Error parsing saved user:", error)
         localStorage.removeItem("mbm_user")
@@ -42,83 +61,100 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    console.log("Login attempt:", { email })
-
     try {
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Check for Master Dev credentials (private)
-      if (email === "2668harris@gmail.com" && password === "masterdev123") {
-        const userData: User = {
-          id: "user_harris_2668",
-          email: "2668harris@gmail.com",
-          name: "Will Harris",
-          plan: "Master Developer",
-          role: "master_dev",
-          credits: 999999,
+      // Master admin account
+      if (email === "admin@themanbehindthemusic.app" && password === "masteradmin123") {
+        const masterUser: User = {
+          id: "master_admin_001",
+          name: "Master Admin",
+          email: "admin@themanbehindthemusic.app",
+          plan: "pro",
+          role: "master_admin",
+          submissions: 999,
+          submissionsUsed: 0,
         }
-        console.log("Master Dev login successful:", userData)
-        setUser(userData)
-        localStorage.setItem("mbm_user", JSON.stringify(userData))
+        setUser(masterUser)
+        localStorage.setItem("mbm_user", JSON.stringify(masterUser))
         return true
       }
 
-      // Demo mode - all other accounts start as Creator (free)
-      if (email && password) {
-        const userData: User = {
-          id: `user_${Date.now()}`,
-          email,
-          name: email.split("@")[0],
-          plan: "Creator",
-          role: "user",
-          credits: 0,
+      // Demo admin accounts
+      if (email.includes("admin") && password === "admin123") {
+        const adminUser: User = {
+          id: `admin_${Date.now()}`,
+          name: "Admin User",
+          email: email,
+          plan: "pro",
+          role: "admin",
+          submissions: 50,
+          submissionsUsed: 0,
         }
-        console.log("Demo login successful (Creator account):", userData)
-        setUser(userData)
-        localStorage.setItem("mbm_user", JSON.stringify(userData))
+        setUser(adminUser)
+        localStorage.setItem("mbm_user", JSON.stringify(adminUser))
         return true
       }
 
-      return false
+      // Regular user login - demo mode
+      const demoUser: User = {
+        id: `user_${Date.now()}`,
+        name: email.split("@")[0].charAt(0).toUpperCase() + email.split("@")[0].slice(1),
+        email: email,
+        plan: "basic",
+        role: "user",
+        submissions: 1,
+        submissionsUsed: 0,
+      }
+
+      setUser(demoUser)
+      localStorage.setItem("mbm_user", JSON.stringify(demoUser))
+      return true
     } catch (error) {
       console.error("Login error:", error)
       return false
     }
   }
 
-  const signup = async (email: string, password: string, name?: string) => {
-    console.log("Signup attempt:", { email, name })
-
+  const signup = async (data: SignupData): Promise<boolean> => {
     try {
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // All new accounts start as Creator (free)
-      const userData: User = {
+      const newUser: User = {
         id: `user_${Date.now()}`,
-        email,
-        name: name || email.split("@")[0],
-        plan: "Creator",
+        name: `${data.firstName} ${data.lastName}`,
+        email: data.email,
+        artistName: data.artistName,
+        genre: data.genre,
+        plan: "basic",
         role: "user",
-        credits: 0,
+        submissions: 1,
+        submissionsUsed: 0,
       }
-      console.log("Signup successful (Creator account):", userData)
-      setUser(userData)
-      localStorage.setItem("mbm_user", JSON.stringify(userData))
+
+      setUser(newUser)
+      localStorage.setItem("mbm_user", JSON.stringify(newUser))
+      return true
     } catch (error) {
       console.error("Signup error:", error)
-      throw new Error("Signup failed. Please try again.")
+      return false
     }
   }
 
   const logout = () => {
-    console.log("User logged out")
     setUser(null)
     localStorage.removeItem("mbm_user")
   }
 
-  return <AuthContext.Provider value={{ user, login, signup, logout, isLoading }}>{children}</AuthContext.Provider>
+  const updateUser = (data: Partial<User>) => {
+    if (user) {
+      const updatedUser = { ...user, ...data }
+      setUser(updatedUser)
+      localStorage.setItem("mbm_user", JSON.stringify(updatedUser))
+    }
+  }
+
+  return (
+    <AuthContext.Provider value={{ user, login, signup, logout, updateUser, isLoading }}>
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export function useAuth() {

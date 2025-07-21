@@ -4,7 +4,7 @@ import { Navigation } from "@/components/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Star, Award, Music, Users, TrendingUp, Headphones, Mic, Radio, Play, ArrowRight } from "lucide-react"
+import { Star, Award, Music, Users, TrendingUp, Play, ArrowRight } from "lucide-react"
 import Image from "next/image"
 
 export default function AboutPage() {
@@ -15,10 +15,10 @@ export default function AboutPage() {
     { label: "Years Experience", value: "25+", icon: TrendingUp },
   ]
 
-  const producers = [
+  const founders = [
     {
       name: "BIG Tank",
-      title: "Grammy-Nominated Producer",
+      title: "Grammy-Nominated Producer & Co-Founder",
       image: "/images/big-tank.jpg",
       bio: "BIG Tank is a Grammy-nominated producer and songwriter who has worked with some of the biggest names in hip-hop and R&B. With over 15 years in the industry, he's produced tracks for Eminem, 50 Cent, and countless other platinum-selling artists. His signature sound blends hard-hitting drums with melodic elements that have defined modern hip-hop production.",
       achievements: [
@@ -31,10 +31,10 @@ export default function AboutPage() {
       stats: { tracks: "500+", artists: "200+", years: "15+" },
     },
     {
-      name: "Rockwilder",
-      title: "East Coast Hip-Hop Legend",
+      name: "DJ Rockwilder",
+      title: "East Coast Hip-Hop Legend & Co-Founder",
       image: "/images/rockwilder.jpg",
-      bio: "Rockwilder is a legendary producer who helped define the sound of East Coast hip-hop in the late 90s and 2000s. Known for his work with Method Man & Redman, Jay-Z, and Christina Aguilera, his production style combines gritty street sounds with commercial appeal. He's been instrumental in launching careers and creating timeless hip-hop classics.",
+      bio: "DJ Rockwilder is a legendary producer who helped define the sound of East Coast hip-hop in the late 90s and 2000s. Known for his work with Method Man & Redman, Jay-Z, and Christina Aguilera, his production style combines gritty street sounds with commercial appeal. He's been instrumental in launching careers and creating timeless hip-hop classics.",
       achievements: [
         "Produced Method Man & Redman's biggest hits",
         "Multi-platinum producer with Jay-Z collaborations",
@@ -57,6 +57,39 @@ export default function AboutPage() {
       ],
       specialties: ["Detroit Hip-Hop", "Performance Coaching", "A&R Services", "Industry Navigation"],
       stats: { tracks: "300+", artists: "100+", years: "20+" },
+    },
+  ]
+
+  const timeline = [
+    {
+      year: "2019",
+      title: "The Vision",
+      description: "Three industry veterans recognize the gap between underground talent and elite opportunities",
+    },
+    {
+      year: "2020",
+      title: "Platform Development",
+      description: "Building the technology to connect artists directly with music supervisors and A&Rs",
+    },
+    {
+      year: "2021",
+      title: "Beta Launch",
+      description: "Invite-only beta with select artists and industry professionals",
+    },
+    {
+      year: "2022",
+      title: "First Major Placements",
+      description: "Artists secure placements in Netflix originals and HBO productions",
+    },
+    {
+      year: "2023",
+      title: "Industry Recognition",
+      description: "MBM becomes the go-to platform for sync licensing professionals",
+    },
+    {
+      year: "2024",
+      title: "Global Expansion",
+      description: "Expanding to serve artists and supervisors worldwide",
     },
   ]
 
@@ -83,18 +116,18 @@ export default function AboutPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
                 onClick={() => (window.location.href = "/signup")}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90 text-white px-8 py-3 text-lg"
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90 text-white px-8 py-3 text-lg blue-glow"
               >
                 Get Started Free
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
               <Button
                 variant="outline"
-                onClick={() => (window.location.href = "/podcast")}
-                className="border-gray-600 text-gray-300 hover:bg-gray-800 px-8 py-3 text-lg"
+                onClick={() => (window.location.href = "/how-it-works")}
+                className="border-gray-600 text-gray-300 hover:bg-gray-800 px-8 py-3 text-lg glass bg-transparent"
               >
-                <Headphones className="w-5 h-5 mr-2" />
-                Listen to Podcast
+                <Play className="w-5 h-5 mr-2" />
+                How It Works
               </Button>
             </div>
           </div>
@@ -102,7 +135,7 @@ export default function AboutPage() {
           {/* Stats Section */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-20">
             {stats.map((stat, index) => (
-              <Card key={index} className="bg-gray-900/50 border-gray-700 text-center">
+              <Card key={index} className="glass border-gray-700 text-center">
                 <CardContent className="p-6">
                   <stat.icon className="w-8 h-8 mx-auto mb-3 text-purple-400" />
                   <div className="text-3xl font-bold text-white mb-1">{stat.value}</div>
@@ -149,29 +182,62 @@ export default function AboutPage() {
             </div>
           </div>
 
-          {/* Producer Profiles */}
+          {/* Timeline */}
           <div className="mb-20">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">Meet Our Producers</h2>
+              <h2 className="text-3xl font-bold mb-4">Our Journey</h2>
+              <p className="text-gray-400 max-w-2xl mx-auto">From vision to reality - the evolution of MBM</p>
+            </div>
+
+            <div className="max-w-4xl mx-auto">
+              <div className="relative">
+                {/* Timeline line */}
+                <div className="absolute left-1/2 transform -translate-x-1/2 w-1 h-full bg-gradient-to-b from-purple-500 to-pink-500"></div>
+
+                {timeline.map((item, index) => (
+                  <div
+                    key={index}
+                    className={`flex items-center mb-12 ${index % 2 === 0 ? "flex-row" : "flex-row-reverse"}`}
+                  >
+                    <div className={`w-1/2 ${index % 2 === 0 ? "pr-8 text-right" : "pl-8 text-left"}`}>
+                      <Card className="glass border-gray-700">
+                        <CardContent className="p-6">
+                          <div className="text-2xl font-bold text-purple-400 mb-2">{item.year}</div>
+                          <h3 className="text-xl font-semibold text-white mb-2">{item.title}</h3>
+                          <p className="text-gray-300">{item.description}</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                    <div className="w-4 h-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full relative z-10"></div>
+                    <div className="w-1/2"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Founder Profiles */}
+          <div className="mb-20">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4">Meet Our Founders</h2>
               <p className="text-gray-400 max-w-2xl mx-auto">
-                Our team of Grammy-nominated producers and industry veterans bring decades of experience and countless
-                platinum records to help develop your sound.
+                Industry legends with decades of experience and countless platinum records
               </p>
             </div>
 
             <div className="space-y-16">
-              {producers.map((producer, index) => (
+              {founders.map((founder, index) => (
                 <div
-                  key={producer.name}
+                  key={founder.name}
                   className={`flex flex-col ${index % 2 === 1 ? "lg:flex-row-reverse" : "lg:flex-row"} gap-12 items-center`}
                 >
-                  {/* Producer Image */}
+                  {/* Founder Image */}
                   <div className="lg:w-1/3">
                     <div className="relative">
                       <div className="aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-purple-500/20 to-pink-500/20 p-1">
                         <Image
-                          src={producer.image || "/placeholder.svg"}
-                          alt={producer.name}
+                          src={founder.image || "/placeholder.svg"}
+                          alt={founder.name}
                           width={400}
                           height={400}
                           className="w-full h-full object-cover rounded-xl"
@@ -183,26 +249,26 @@ export default function AboutPage() {
                     </div>
                   </div>
 
-                  {/* Producer Info */}
+                  {/* Founder Info */}
                   <div className="lg:w-2/3 space-y-6">
                     <div>
-                      <h3 className="text-3xl font-bold mb-2">{producer.name}</h3>
-                      <p className="text-purple-300 text-lg mb-4">{producer.title}</p>
-                      <p className="text-gray-300 leading-relaxed">{producer.bio}</p>
+                      <h3 className="text-3xl font-bold mb-2">{founder.name}</h3>
+                      <p className="text-purple-300 text-lg mb-4">{founder.title}</p>
+                      <p className="text-gray-300 leading-relaxed">{founder.bio}</p>
                     </div>
 
                     {/* Stats */}
                     <div className="grid grid-cols-3 gap-4">
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-purple-400">{producer.stats.tracks}</div>
+                        <div className="text-2xl font-bold text-purple-400">{founder.stats.tracks}</div>
                         <div className="text-sm text-gray-400">Tracks Produced</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-pink-400">{producer.stats.artists}</div>
+                        <div className="text-2xl font-bold text-pink-400">{founder.stats.artists}</div>
                         <div className="text-sm text-gray-400">Artists Worked With</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-blue-400">{producer.stats.years}</div>
+                        <div className="text-2xl font-bold text-blue-400">{founder.stats.years}</div>
                         <div className="text-sm text-gray-400">Years Experience</div>
                       </div>
                     </div>
@@ -211,7 +277,7 @@ export default function AboutPage() {
                     <div>
                       <h4 className="text-lg font-semibold mb-3 text-white">Key Achievements</h4>
                       <div className="grid md:grid-cols-2 gap-2">
-                        {producer.achievements.map((achievement, i) => (
+                        {founder.achievements.map((achievement, i) => (
                           <div key={i} className="flex items-center space-x-2">
                             <Star className="w-4 h-4 text-yellow-400 flex-shrink-0" />
                             <span className="text-gray-300 text-sm">{achievement}</span>
@@ -224,7 +290,7 @@ export default function AboutPage() {
                     <div>
                       <h4 className="text-lg font-semibold mb-3 text-white">Specialties</h4>
                       <div className="flex flex-wrap gap-2">
-                        {producer.specialties.map((specialty, i) => (
+                        {founder.specialties.map((specialty, i) => (
                           <Badge key={i} className="bg-gray-800 text-gray-300 border-gray-600">
                             {specialty}
                           </Badge>
@@ -237,62 +303,9 @@ export default function AboutPage() {
             </div>
           </div>
 
-          {/* Podcast Section */}
-          <div className="mb-20">
-            <Card className="bg-gradient-to-r from-purple-900/50 to-pink-900/50 border-purple-500/30">
-              <CardContent className="p-8 md:p-12">
-                <div className="grid md:grid-cols-2 gap-8 items-center">
-                  <div>
-                    <div className="flex items-center mb-4">
-                      <Radio className="w-8 h-8 text-purple-400 mr-3" />
-                      <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
-                        Behind The Beats Podcast
-                      </Badge>
-                    </div>
-                    <h3 className="text-3xl font-bold mb-4">Hear the Stories Behind the Music</h3>
-                    <p className="text-gray-300 mb-6">
-                      Join our producers as they break down hit records, share industry insights, and review submissions
-                      live on air. Get an inside look at what makes a track stand out.
-                    </p>
-                    <div className="space-y-3 mb-6">
-                      <div className="flex items-center space-x-3">
-                        <Play className="w-5 h-5 text-green-400" />
-                        <span className="text-gray-300">Live track reviews and feedback</span>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <Mic className="w-5 h-5 text-blue-400" />
-                        <span className="text-gray-300">Industry stories and insights</span>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <Users className="w-5 h-5 text-purple-400" />
-                        <span className="text-gray-300">Guest appearances by major artists</span>
-                      </div>
-                    </div>
-                    <Button
-                      onClick={() => (window.location.href = "/podcast")}
-                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90"
-                    >
-                      <Headphones className="w-4 h-4 mr-2" />
-                      Listen Now
-                    </Button>
-                  </div>
-                  <div className="relative">
-                    <Image
-                      src="/images/podcast-big-tank.png"
-                      alt="Behind The Beats Podcast"
-                      width={400}
-                      height={300}
-                      className="rounded-lg shadow-2xl"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
           {/* Call to Action */}
           <div className="text-center">
-            <Card className="bg-gradient-to-r from-gray-900 to-black border-gray-700">
+            <Card className="glass border-gray-700 bg-gradient-to-r from-gray-900/50 to-black/50">
               <CardContent className="p-12">
                 <h2 className="text-3xl font-bold mb-4">Ready to Get Your Music Heard?</h2>
                 <p className="text-gray-300 mb-8 max-w-2xl mx-auto">
@@ -302,7 +315,7 @@ export default function AboutPage() {
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button
                     onClick={() => (window.location.href = "/signup")}
-                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90 px-8 py-3 text-lg"
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90 px-8 py-3 text-lg blue-glow"
                   >
                     Start Your Journey
                     <ArrowRight className="w-5 h-5 ml-2" />
@@ -310,7 +323,7 @@ export default function AboutPage() {
                   <Button
                     variant="outline"
                     onClick={() => (window.location.href = "/pricing")}
-                    className="border-gray-600 text-gray-300 hover:bg-gray-800 px-8 py-3 text-lg"
+                    className="border-gray-600 text-gray-300 hover:bg-gray-800 px-8 py-3 text-lg glass bg-transparent"
                   >
                     View Pricing Plans
                   </Button>
